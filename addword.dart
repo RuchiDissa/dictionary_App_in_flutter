@@ -1,5 +1,7 @@
 import 'package:dictionary/DbHelper.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class addword extends StatefulWidget {
   const addword({Key? key}) : super(key: key);
@@ -11,7 +13,10 @@ class addword extends StatefulWidget {
 class _addwordState extends State<addword> {
   final englishController = TextEditingController();
   final turkishController = TextEditingController();
+  String? _imagePath;
   List words = [];
+
+  final ImagePicker _picker = ImagePicker();
 
   void getWords() async {
     final data = await DbHelper.getAll();
@@ -24,6 +29,15 @@ class _addwordState extends State<addword> {
   void initState() {
     getWords();
     super.initState();
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+    }
   }
 
   @override
@@ -90,10 +104,19 @@ class _addwordState extends State<addword> {
                   ),
                   const SizedBox(height: 20),
                   MaterialButton(
+                    onPressed: _pickImage,
+                    height: 50,
+                    minWidth: double.infinity,
+                    color: Colors.lightBlue,
+                    child: const Text('Pick Image'),
+                  ),
+                  const SizedBox(height: 20),
+                  MaterialButton(
                     onPressed: () async {
                       int res = await DbHelper.addWord(
                         EngWord: englishController.text.trim(),
                         TrWord: turkishController.text.trim(),
+                        imagePath: _imagePath,
                       );
                       if (res > 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +124,9 @@ class _addwordState extends State<addword> {
                         );
                         englishController.clear();
                         turkishController.clear();
+                        setState(() {
+                          _imagePath = null;
+                        });
                         getWords();
                       }
                     },
@@ -157,6 +183,7 @@ class _addwordState extends State<addword> {
                                         words[i]["id"],
                                         words[i]["EngWord"],
                                         words[i]["TrWord"],
+                                        words[i]["imagePath"],
                                       );
                                     },
                                     icon: const Icon(Icons.edit),
@@ -201,6 +228,13 @@ class _addwordState extends State<addword> {
                                 );
                               },
                             ),
+                            if (words[i]["imagePath"] != null)
+                              Image.file(
+                                File(words[i]["imagePath"]),
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
                           ],
                         ),
                       );
@@ -215,10 +249,11 @@ class _addwordState extends State<addword> {
     );
   }
 
-  void showEditBox(int id, String EngWord, String TrWord) {
+  void showEditBox(int id, String EngWord, String TrWord, String imagePath) {
     setState(() {
       englishController.text = EngWord;
       turkishController.text = TrWord;
+      _imagePath = imagePath;
     });
     showDialog(
       context: context,
@@ -255,6 +290,14 @@ class _addwordState extends State<addword> {
                   ),
                 ),
               ),
+              const SizedBox(height: 15),
+              MaterialButton(
+                onPressed: _pickImage,
+                height: 50,
+                minWidth: double.infinity,
+                color: Colors.lightBlue,
+                child: const Text('Pick Image'),
+              ),
             ],
           ),
           actions: [
@@ -271,6 +314,7 @@ class _addwordState extends State<addword> {
                   id: id,
                   EngWord: englishController.text.trim(),
                   TrWord: turkishController.text.trim(),
+                  imagePath: _imagePath,
                 );
                 Navigator.pop(context);
                 getWords();

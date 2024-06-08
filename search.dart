@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dictionary/DbHelper.dart';
 
@@ -36,9 +37,9 @@ class _searchState extends State<search> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-                'lib/images/man.png',
-                height: 300,
-                fit: BoxFit.cover,
+                'lib/images/man.png', // Adjust the path as necessary
+                height: 300, // Adjust the height as necessary
+                fit: BoxFit.cover, // Adjust the fit as necessary
               ),
               const Divider(),
               const Text(
@@ -101,7 +102,8 @@ class _searchState extends State<search> {
               ),
               const Divider(),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.4,
+                height: MediaQuery.of(context).size.height *
+                    0.4, // Adjust the height as needed
                 child: _isSearching
                     ? const Center(child: CircularProgressIndicator())
                     : _searchResults.isEmpty
@@ -118,6 +120,22 @@ class _searchState extends State<search> {
                         : ListView.builder(
                             itemCount: _searchResults.length,
                             itemBuilder: (context, index) {
+                              String? imagePath =
+                                  _searchResults[index]["imagePath"];
+                              Widget imageWidget = SizedBox.shrink();
+
+                              if (imagePath != null && imagePath.isNotEmpty) {
+                                File imageFile = File(imagePath);
+                                if (imageFile.existsSync()) {
+                                  imageWidget = Image.file(
+                                    imageFile,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                              }
+
                               return Card(
                                 color: Colors.white,
                                 child: Column(
@@ -145,6 +163,7 @@ class _searchState extends State<search> {
                                       subtitle: Text(
                                           "${_searchResults[index]["TrWord"]}"),
                                     ),
+                                    imageWidget,
                                   ],
                                 ),
                               );

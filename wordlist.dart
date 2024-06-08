@@ -1,5 +1,7 @@
 import 'package:dictionary/DbHelper.dart';
 import 'package:flutter/material.dart';
+import 'dart:io'; // for File class
+import 'package:image_picker/image_picker.dart'; // for picking images
 
 class wordlist extends StatefulWidget {
   const wordlist({Key? key}) : super(key: key);
@@ -12,6 +14,8 @@ class _wordlistState extends State<wordlist> {
   List<Map<String, dynamic>> words = [];
   final englishController = TextEditingController();
   final turkishController = TextEditingController();
+  String? _imagePath;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -24,6 +28,15 @@ class _wordlistState extends State<wordlist> {
     setState(() {
       words = data;
     });
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+    }
   }
 
   @override
@@ -44,9 +57,7 @@ class _wordlistState extends State<wordlist> {
       ),
       body: Column(
         children: [
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
           Image.asset(
             'lib/images/dic.png',
             height: 250,
@@ -55,7 +66,7 @@ class _wordlistState extends State<wordlist> {
           ),
           const Divider(),
           const Text(
-            "List Of Word",
+            "List Of Words",
             style: TextStyle(
                 color: Color.fromARGB(255, 4, 0, 126),
                 fontWeight: FontWeight.bold,
@@ -96,6 +107,7 @@ class _wordlistState extends State<wordlist> {
                               words[i]["id"],
                               words[i]["EngWord"],
                               words[i]["TrWord"],
+                              words[i]["imagePath"],
                             );
                           },
                           icon: const Icon(Icons.edit),
@@ -138,6 +150,13 @@ class _wordlistState extends State<wordlist> {
                           );
                         },
                       ),
+                      if (words[i]["imagePath"] != null)
+                        Image.file(
+                          File(words[i]["imagePath"]),
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
                     ],
                   ),
                 );
@@ -149,10 +168,11 @@ class _wordlistState extends State<wordlist> {
     );
   }
 
-  void showEditBox(int id, String engWord, String trWord) {
+  void showEditBox(int id, String engWord, String trWord, String? imagePath) {
     setState(() {
       englishController.text = engWord;
       turkishController.text = trWord;
+      _imagePath = imagePath;
     });
     showDialog(
       context: context,
@@ -191,6 +211,14 @@ class _wordlistState extends State<wordlist> {
                   ),
                 ),
               ),
+              const SizedBox(height: 15),
+              MaterialButton(
+                onPressed: _pickImage,
+                height: 50,
+                minWidth: double.infinity,
+                color: Colors.lightBlue,
+                child: const Text('Pick Image'),
+              ),
             ],
           ),
           actions: [
@@ -207,6 +235,7 @@ class _wordlistState extends State<wordlist> {
                   id: id,
                   EngWord: englishController.text.trim(),
                   TrWord: turkishController.text.trim(),
+                  imagePath: _imagePath,
                 );
                 Navigator.pop(context);
                 getWords();
